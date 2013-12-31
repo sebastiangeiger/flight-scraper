@@ -1,6 +1,6 @@
 require 'mechanize'
 
-class FlightScraper::Search
+class FlightScraper::Search::Ebookers
   def initialize(segment)
     @segment = segment
     @type = :one_way
