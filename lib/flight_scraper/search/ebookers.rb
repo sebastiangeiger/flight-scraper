@@ -3,7 +3,7 @@ require 'mechanize'
 class FlightScraper::Search::Ebookers
   def initialize(segments)
     @segments = segments
-    @type = get_trip_type
+    @type = SearchType.type_for(segments)
     @agent = Mechanize.new
   end
 
@@ -14,25 +14,14 @@ class FlightScraper::Search::Ebookers
 
   def submit_search_form
     @agent.get("http://www.ebookers.de")
-    if @type == :oneway
-      @agent.click("Nur Hinflug")
-    elsif @type == :roundtrip
-      @agent.click("Hin-/Rückflug")
-    else
-      raise "idiot"
-    end
-
-    #ar.rt.leaveSlice.orig.key
-    #ar.rt.leaveSlice.dest.key
-    #ar.rt.leaveSlice.date
-    #ar.rt.returnSlice.date
-
+    @agent.click(@type.label)
+    
     search_form = @agent.page.form_with(:class => "searchFormForm")
     search_form.field_with(:name => /leaveSlice\.orig/).value = @segments[0].from
     search_form.field_with(:name => /leaveSlice\.dest/).value = @segments[0].to
     search_form.field_with(:name => /leaveSlice\.date/).value = @segments[0].date.strftime("%d.%m.%Y")
 
-    if @type == :roundtrip
+    if @type.is_a? RoundTrip
       search_form.field_with(:name => /returnSlice\.date/).value = @segments[1].date.strftime("%d.%m.%Y")
     end
 
@@ -56,17 +45,42 @@ class FlightScraper::Search::Ebookers
     }
   end
 
-  def get_trip_type
+  SearchType = Struct.new(:label) do
+    def self.type_for(segments)
+      [OneWay, RoundTrip, Multiple].select{|x| x.accepts(segments)}.first.new
+    end
+  end
 
-    if @segments.length == 1
-      return :oneway 
-    elsif @segments.length == 2 and @segments.first.from == @segments.last.to and @segments.first.to == @segments.last.from
-      return :roundtrip 
-    else
-      return :multiple
+  class OneWay < SearchType
+    def initialize
+      super "Nur Hinflug"
     end
 
+    def self.accepts(segments)
+      segments.length == 1
+    end
   end
+
+  class RoundTrip < SearchType
+    def initialize
+      super "Hin-/Rückflug"
+    end
+
+    def self.accepts(segments)
+      segments.length == 2 and segments.first.from == segments.last.to and segments.first.to == segments.last.from
+    end
+  end
+
+ class Multiple < SearchType
+    def initialize
+      super "Nur Hinflug"
+    end
+
+    def self.accepts(segments)
+      segments.length >= 2 and not RoundTrip.accepts(segments)
+    end
+  end
+
 
 end
 
