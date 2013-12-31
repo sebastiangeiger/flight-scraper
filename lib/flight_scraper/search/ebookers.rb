@@ -1,11 +1,12 @@
 require 'mechanize'
 
 class FlightScraper::Search::Ebookers
-  def initialize(segment)
-    @segment = segment
-    @type = :one_way
+  def initialize(segments)
+    @segments = segments
+    @type = get_trip_type
     @agent = Mechanize.new
   end
+
   def execute
     submit_search_form
     interpret_search_results
@@ -13,16 +14,30 @@ class FlightScraper::Search::Ebookers
 
   def submit_search_form
     @agent.get("http://www.ebookers.de")
-    if @type == :one_way
+    if @type == :oneway
       @agent.click("Nur Hinflug")
+    elsif @type == :roundtrip
+      @agent.click("Hin-/Rückflug")
     else
       raise "idiot"
     end
+
+    #ar.rt.leaveSlice.orig.key
+    #ar.rt.leaveSlice.dest.key
+    #ar.rt.leaveSlice.date
+    #ar.rt.returnSlice.date
+
     search_form = @agent.page.form_with(:class => "searchFormForm")
-    search_form.field_with(:name => /leaveSlice\.orig/).value = @segment.from
-    search_form.field_with(:name => /leaveSlice\.dest/).value = @segment.to
-    search_form.field_with(:name => /leaveSlice\.date/).value = @segment.date.strftime("%d.%m.%Y")
+    search_form.field_with(:name => /leaveSlice\.orig/).value = @segments[0].from
+    search_form.field_with(:name => /leaveSlice\.dest/).value = @segments[0].to
+    search_form.field_with(:name => /leaveSlice\.date/).value = @segments[0].date.strftime("%d.%m.%Y")
+
+    if @type == :roundtrip
+      search_form.field_with(:name => /returnSlice\.date/).value = @segments[1].date.strftime("%d.%m.%Y")
+    end
+
     search_form.submit(search_form.button_with(:name => "search"))
+
   end
 
   def interpret_search_results
@@ -40,5 +55,18 @@ class FlightScraper::Search::Ebookers
       currency: match_data[3]
     }
   end
+
+  def get_trip_type
+
+    if @segments.length == 1
+      return :oneway 
+    elsif @segments.length == 2 and @segments.first.from == @segments.last.to and @segments.first.to == @segments.last.from
+      return :roundtrip 
+    else
+      return :multiple
+    end
+
+  end
+
 end
 
