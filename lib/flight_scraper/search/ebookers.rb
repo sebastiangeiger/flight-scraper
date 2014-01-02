@@ -17,16 +17,27 @@ class FlightScraper::Search::Ebookers
     @agent.click(@type.label)
     
     search_form = @agent.page.form_with(:class => "searchFormForm")
-    search_form.field_with(:name => /leaveSlice\.orig/).value = @segments[0].from
-    search_form.field_with(:name => /leaveSlice\.dest/).value = @segments[0].to
-    search_form.field_with(:name => /leaveSlice\.date/).value = @segments[0].date.strftime("%d.%m.%Y")
+
+    if @type.is_a? OneWay or @type.is_a? RoundTrip
+      search_form.field_with(:name => /leaveSlice\.orig/).value = @segments[0].from
+      search_form.field_with(:name => /leaveSlice\.dest/).value = @segments[0].to
+      search_form.field_with(:name => /leaveSlice\.date/).value = @segments[0].date.strftime("%d.%m.%Y")
+    end
 
     if @type.is_a? RoundTrip
       search_form.field_with(:name => /returnSlice\.date/).value = @segments[1].date.strftime("%d.%m.%Y")
     end
 
-    search_form.submit(search_form.button_with(:name => "search"))
+    if @type.is_a? Multiple
+      @segments.each_with_index do |segment, i|
+        search_form.field_with(:name => /slc\[#{i}\]\.orig\.key/).value = segment.from
+        search_form.field_with(:name => /slc\[#{i}\]\.dest\.key/).value = segment.to
+        search_form.field_with(:name => /slc\[#{i}\]\.date/).value = segment.date.strftime("%d.%m.%Y")
+      end
 
+    end
+
+    search_form.submit(search_form.button_with(:name => "search"))
   end
 
   def interpret_search_results
@@ -73,7 +84,7 @@ class FlightScraper::Search::Ebookers
 
  class Multiple < SearchType
     def initialize
-      super "Nur Hinflug"
+      super "Gabelflüge / Mehrere Stopps"
     end
 
     def self.accepts(segments)
