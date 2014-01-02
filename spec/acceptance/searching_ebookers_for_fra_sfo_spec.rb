@@ -45,3 +45,19 @@ describe 'Searching for FRA-EWR-SFO-MUC yields 45 results', :vcr do
     results.map{|r| r[:currency]}.uniq.should == ["€"]
   end
 end
+
+describe 'Searching multileg is the same as', :vcr do
+  it '... searching roundtrip' do
+    segments = [FlightScraper::Segment.new("FRA", "SFO", Date.new(2014,2,15)),
+                FlightScraper::Segment.new("SFO", "FRA", Date.new(2014,2,25))]
+    round_trip = FlightScraper::Search::Ebookers.new(segments).execute
+    multi_leg = FlightScraper::Search::Ebookers.new(segments, FlightScraper::Search::Ebookers::Multiple).execute
+    round_trip.should == multi_leg
+  end
+  it '... searching oneway' do
+    segments = [FlightScraper::Segment.new("FRA", "SFO", Date.new(2014,2,15))]
+    one_way = FlightScraper::Search::Ebookers.new(segments).execute
+    multi_leg = FlightScraper::Search::Ebookers.new(segments, FlightScraper::Search::Ebookers::Multiple).execute
+    one_way.should == multi_leg
+  end
+end

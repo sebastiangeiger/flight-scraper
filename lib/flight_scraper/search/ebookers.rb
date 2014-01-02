@@ -1,9 +1,9 @@
 require 'mechanize'
 
 class FlightScraper::Search::Ebookers
-  def initialize(segments)
+  def initialize(segments, type = nil)
     @segments = segments
-    @type = SearchType.type_for(segments)
+    @type = type.new if type
     @agent = Mechanize.new
   end
 
@@ -12,23 +12,27 @@ class FlightScraper::Search::Ebookers
     interpret_search_results
   end
 
+  def type
+    @type ||= SearchType.type_for(@segments)
+  end
+
   def submit_search_form
     @agent.get("http://www.ebookers.de")
-    @agent.click(@type.label)
-    
+    @agent.click(type.label)
+
     search_form = @agent.page.form_with(:class => "searchFormForm")
 
-    if @type.is_a? OneWay or @type.is_a? RoundTrip
+    if type.is_a? OneWay or type.is_a? RoundTrip
       search_form.field_with(:name => /leaveSlice\.orig/).value = @segments[0].from
       search_form.field_with(:name => /leaveSlice\.dest/).value = @segments[0].to
       search_form.field_with(:name => /leaveSlice\.date/).value = @segments[0].date.strftime("%d.%m.%Y")
     end
 
-    if @type.is_a? RoundTrip
+    if type.is_a? RoundTrip
       search_form.field_with(:name => /returnSlice\.date/).value = @segments[1].date.strftime("%d.%m.%Y")
     end
 
-    if @type.is_a? Multiple
+    if type.is_a? Multiple
       @segments.each_with_index do |segment, i|
         search_form.field_with(:name => /slc\[#{i}\]\.orig\.key/).value = segment.from
         search_form.field_with(:name => /slc\[#{i}\]\.dest\.key/).value = segment.to
