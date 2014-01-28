@@ -34,11 +34,13 @@ class FlightScraper::Search::Ebookers
 
   def build_result(result_card)
     money = result_card.search(".basePrice .money").text
-    match_data = money.match /^(\d+),(\d+)(.*)$/
-    raise "Could not match" unless match_data
+    flights = result_card.search("li").text.tr("\n\t", "").squeeze(" ")
+    price_data = money.match /^(\d+),(\d+)(.*)$/
+    raise "Could not match data" unless price_data
     {
-      price: match_data[1].to_i,
-      currency: match_data[3]
+      price: price_data[1].to_i,
+      currency: price_data[3],
+      flights: flights
     }
   end
 

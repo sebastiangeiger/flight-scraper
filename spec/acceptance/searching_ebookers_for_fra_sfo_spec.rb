@@ -10,6 +10,7 @@ describe 'Searching for a oneway from FRA to SFO yields 45 results', :vcr do
 
     results.size.should == 45
     results.first.should have_key :price
+    results.first.should have_key :flights
     results.sort{|a,b| a[:price] <=> b[:price]}.first[:price].should == 1135
     results.map{|r| r[:currency]}.uniq.should == ["€"]
   end
@@ -25,6 +26,7 @@ describe 'Searching for a roundtrip from FRA to SFO yields 45 results', :vcr do
 
     results.size.should == 45
     results.first.should have_key :price
+    results.first.should have_key :flights
     results.sort{|a,b| a[:price] <=> b[:price]}.first[:price].should == 573
     results.map{|r| r[:currency]}.uniq.should == ["€"]
   end
@@ -41,6 +43,7 @@ describe 'Searching for FRA-EWR-SFO-MUC yields 45 results', :vcr do
 
     results.size.should == 45
     results.first.should have_key :price
+    results.first.should have_key :flights
     results.sort{|a,b| a[:price] <=> b[:price]}.first[:price].should == 711
     results.map{|r| r[:currency]}.uniq.should == ["€"]
   end
