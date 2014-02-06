@@ -62,5 +62,6 @@ DEPENDENCIES
   pry
   rake
   rspec
+  slop
   vcr
   webmock (< 1.16)

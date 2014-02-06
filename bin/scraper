@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+require 'slop'
+
+opts = Slop.parse do
+  banner 'Usage: scrape [options]'
+
+  command 'search' do
+    on :legs=, as: Array
+    on :dates=, as: Array
+
+    run do |opts, args|
+      puts "You ran 'search' with options #{opts.to_hash} and args: #{args.inspect}"
+    end
+  end
+
+  command 'list' do
+    run do |opts, args|
+      puts "You ran 'list' with options #{opts.to_hash} and args: #{args.inspect}"
+    end
+  end
+end
+
